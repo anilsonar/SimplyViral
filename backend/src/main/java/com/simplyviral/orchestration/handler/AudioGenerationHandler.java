@@ -59,6 +59,9 @@ public class AudioGenerationHandler implements StepHandler {
         // 4. Metered execution
         byte[] audioBytes = executor.executeMetered(audioAdapter, request, stepRunContext);
 
+        if (audioBytes == null || audioBytes.length == 0) {
+            throw new RuntimeException("Empty audio response from ElevenLabs for AUDIO_GENERATION");
+        }
         // 5. Populate usage — character count for cost tracking, estimated audio duration
         int charCount = rawScript.length();
         // Rough estimate: ~15 characters per second of speech

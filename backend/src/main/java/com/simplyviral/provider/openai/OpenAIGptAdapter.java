@@ -38,12 +38,14 @@ public class OpenAIGptAdapter implements ProviderClient<GptRequest, GptResponse>
     @Override
     public GptResponse execute(GptRequest request, StepRun stepContext) {
         log.info("Executing OpenAI chat completion for step_run={} model={}",
-                stepContext.getId(), request.getModel());
+                stepContext != null ? stepContext.getId() : "N/A", request.getModel());
 
         // Mock response for development without real API key
         if ("mock_key".equals(apiKey)) {
             log.warn("OpenAI Mock Key detected. Returning stub response.");
-            return createMockResponse(request);
+            GptResponse mockResponse = createMockResponse(request);
+            populateUsageOnContext(mockResponse, stepContext);
+            return mockResponse;
         }
 
         try {
@@ -73,7 +75,7 @@ public class OpenAIGptAdapter implements ProviderClient<GptRequest, GptResponse>
      * so that MeteredProviderExecutor can persist it.
      */
     private void populateUsageOnContext(GptResponse response, StepRun stepContext) {
-        if (response.getUsage() == null) return;
+        if (response == null || response.getUsage() == null || stepContext == null) return;
 
         try {
             StepRunUsage usage = StepRunUsage.builder()
@@ -145,20 +147,7 @@ public class OpenAIGptAdapter implements ProviderClient<GptRequest, GptResponse>
         usage.setTotal_tokens(350);
         response.setUsage(usage);
 
-        // Populate usage on context even for mock
-        populateUsageOnContext(response, null); // Don't set on context for mock to avoid NPE
-        // Actually re-populate on real context
-        try {
-            StepRunUsage stepUsage = StepRunUsage.builder()
-                    .promptTokens(usage.getPrompt_tokens())
-                    .completionTokens(usage.getCompletion_tokens())
-                    .totalTokens(usage.getTotal_tokens())
-                    .rawUsageJson(objectMapper.writeValueAsString(usage))
-                    .build();
-            // We need to check stepContext but it's passed to execute(), not here
-            // The caller's stepContext is available — this method is called from execute()
-        } catch (Exception ignored) {}
-
+        // Usage is populated on the stepContext by the caller (execute method)
         return response;
     }
 }

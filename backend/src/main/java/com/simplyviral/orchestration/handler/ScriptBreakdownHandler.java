@@ -64,6 +64,11 @@ public class ScriptBreakdownHandler implements StepHandler {
 
         // 5. Metered execution
         GptResponse response = executor.executeMetered(gptAdapter, request, stepRunContext);
+
+        if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
+            throw new RuntimeException("Empty response from GPT for SCRIPT_BREAKDOWN");
+        }
+
         String sceneJson = response.getChoices().get(0).getMessage().getContent();
 
         log.info("Script broken down into scenes for Job {} ({} chars JSON)",

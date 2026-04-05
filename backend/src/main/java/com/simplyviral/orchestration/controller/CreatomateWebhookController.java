@@ -32,7 +32,8 @@ public class CreatomateWebhookController {
 
         log.info("Received Creatomate Webhook for StepRun {}: {}", stepRunId, payload);
 
-        String status = (String) payload.get("status");
+        Object statusObj = payload.get("status");
+        String status = statusObj != null ? String.valueOf(statusObj) : null;
         StepRun stepRun = stepRunRepository.findById(stepRunId).orElse(null);
 
         if (stepRun == null) {

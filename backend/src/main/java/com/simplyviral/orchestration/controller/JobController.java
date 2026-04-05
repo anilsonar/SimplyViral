@@ -1,11 +1,14 @@
 package com.simplyviral.orchestration.controller;
 
+import com.simplyviral.identity.entity.User;
+import com.simplyviral.identity.service.AuthService;
 import com.simplyviral.orchestration.entity.Job;
 import com.simplyviral.orchestration.entity.StepRun;
 import com.simplyviral.orchestration.service.JobService;
 import com.simplyviral.shared.dto.ApiResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -21,16 +24,37 @@ import java.util.stream.Collectors;
 public class JobController {
 
     private final JobService jobService;
+    private final AuthService authService;
 
     /**
-     * Dispatches a new content generation job.
+     * Dispatches a new content generation job for the authenticated user.
      * POST /api/v1/jobs/generate?planType=FREE
      */
     @PostMapping("/generate")
-    public ApiResult<Map<String, Object>> createGenerationJob(@RequestParam String planType) {
+    public ApiResult<Map<String, Object>> createGenerationJob(
+            @RequestParam String planType,
+            Authentication authentication) {
         log.info("Received request to create generation job for plan: {}", planType);
 
-        Job job = jobService.createGenerationJobAnonymous(planType);
+        User user = null;
+        if (authentication != null && authentication.getPrincipal() != null) {
+            String subject = authentication.getPrincipal().toString();
+            try {
+                UUID userId = UUID.fromString(subject);
+                user = authService.getUserById(userId);
+            } catch (IllegalArgumentException e) {
+                try {
+                    user = authService.getUserByEmail(subject);
+                } catch (Exception ignored) {}
+            }
+        }
+
+        Job job;
+        if (user != null) {
+            job = jobService.createGenerationJob(user, planType);
+        } else {
+            job = jobService.createGenerationJobAnonymous(planType);
+        }
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("job_id", job.getId().toString());

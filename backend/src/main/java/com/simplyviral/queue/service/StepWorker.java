@@ -91,11 +91,18 @@ public class StepWorker {
 
         log.info("[WORKER-{}] Processing step {} for job {}", workerId, stepKey, jobId);
 
-        // 1. Resolve the StepRun from DB
-        StepRun stepRun = txTemplate.execute(status ->
-                stepRunRepository.findByJobIdAndStepKey(jobId, stepKey)
-                        .orElseThrow(() -> new IllegalStateException(
-                                "No StepRun found for job=" + jobId + " step=" + stepKey)));
+        // 1. Resolve the StepRun from DB (eagerly fetch job inside transaction)
+        StepRun stepRun = txTemplate.execute(status -> {
+            StepRun run = stepRunRepository.findByJobIdAndStepKey(jobId, stepKey)
+                    .orElse(null);
+            // Force eager initialization of the Job association inside the transaction
+            if (run != null && run.getJob() != null) {
+                run.getJob().getId(); // trigger lazy load
+                run.getJob().getWorkflowId();
+                run.getJob().getWorkflowVersion();
+            }
+            return run;
+        });
 
         if (stepRun == null) return;
 
@@ -140,7 +147,9 @@ public class StepWorker {
                     workerId, stepKey, jobId, stepRun.getLatencyMs(), stepRun.getActualCost());
 
             // 6. Chain next steps via orchestrator
-            orchestrator.handleStepCompletion(queueEntry.getJob(), stepKey);
+            txTemplate.executeWithoutResult(status ->
+                    orchestrator.handleStepCompletion(stepRun.getJob(), stepKey)
+            );
 
         } catch (Exception e) {
             log.error("[WORKER-{}] Step {} FAILED for job {}: {}", workerId, stepKey, jobId, e.getMessage(), e);
@@ -150,8 +159,9 @@ public class StepWorker {
 
     private void handleFailure(StepQueue queueEntry, StepRun stepRun, Exception error) {
         txTemplate.executeWithoutResult(status -> {
+            String errorMsg = error.getMessage();
             stepRun.setErrorCode(error.getClass().getSimpleName());
-            stepRun.setErrorMessage(error.getMessage() != null ? error.getMessage().substring(0, Math.min(error.getMessage().length(), 500)) : "Unknown error");
+            stepRun.setErrorMessage(errorMsg != null ? errorMsg.substring(0, Math.min(errorMsg.length(), 500)) : "Unknown error");
             stepRun.setFinishedAt(OffsetDateTime.now());
 
             // Resolve retry policy from step definition
@@ -171,19 +181,19 @@ public class StepWorker {
 
                 log.warn("[RETRY] Step {} attempt {}/{} for job {}. Next retry in {}ms",
                         stepRun.getStepKey(), nextAttempt, retry.maxAttempts(),
-                        queueEntry.getJob().getId(), delay);
+                        stepRun.getJob().getId(), delay);
             } else {
                 // Exhausted retries: dead letter
                 stepRun.setStatus(StepStatus.DEAD_LETTER);
                 stepRunRepository.save(stepRun);
 
                 queueProvider.deadLetter(queueEntry.getId(),
-                        "Exhausted " + retry.maxAttempts() + " attempts: " + error.getMessage());
+                        "Exhausted " + retry.maxAttempts() + " attempts: " + errorMsg);
 
                 log.error("[DEAD_LETTER] Step {} permanently failed for job {} after {} attempts",
-                        stepRun.getStepKey(), queueEntry.getJob().getId(), retry.maxAttempts());
+                        stepRun.getStepKey(), stepRun.getJob().getId(), retry.maxAttempts());
 
-                orchestrator.handleStepFailure(queueEntry.getJob(), stepRun.getStepKey(),
+                orchestrator.handleStepFailure(stepRun.getJob(), stepRun.getStepKey(),
                         stepRun.getErrorCode(), stepRun.getErrorMessage());
             }
         });

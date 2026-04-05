@@ -63,7 +63,12 @@ public class TopicSelectionHandler implements StepHandler {
         // 5. Metered execution (latency, tokens, cost all tracked)
         GptResponse response = executor.executeMetered(gptAdapter, request, stepRunContext);
 
+        if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
+            throw new RuntimeException("Empty response from GPT for TOPIC_SELECTION");
+        }
+
         String chosenTopic = response.getChoices().get(0).getMessage().getContent();
+
         log.info("GPT selected topic for Job {}: {}", stepRunContext.getJob().getId(), chosenTopic);
 
         // 6. Persist chosen topic as artifact for downstream steps

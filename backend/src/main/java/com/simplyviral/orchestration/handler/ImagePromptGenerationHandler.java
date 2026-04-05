@@ -72,6 +72,11 @@ public class ImagePromptGenerationHandler implements StepHandler {
 
             // 5. Metered execution
             GptResponse response = executor.executeMetered(gptAdapter, request, stepRunContext);
+
+            if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
+                throw new RuntimeException("Empty response from GPT for IMAGE_PROMPT_GENERATION");
+            }
+
             String promptsOutput = response.getChoices().get(0).getMessage().getContent();
 
             log.info("Generated image prompts for Job {} ({} chars)",

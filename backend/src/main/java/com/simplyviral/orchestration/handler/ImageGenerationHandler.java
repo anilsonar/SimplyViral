@@ -63,10 +63,14 @@ public class ImageGenerationHandler implements StepHandler {
 
                 FalAiResponse response = executor.executeMetered(imageAdapter, request, stepRunContext);
 
-                if (response.getImages() != null && !response.getImages().isEmpty()) {
-                    imageUrls.add(response.getImages().get(0).getUrl());
-                    totalImages++;
+                if (response == null || response.getImages() == null || response.getImages().isEmpty()) {
+                    log.warn("No image returned for prompt {}/{} on Job {}", i + 1, prompts.size(),
+                            stepRunContext.getJob().getId());
+                    continue;
                 }
+
+                imageUrls.add(response.getImages().get(0).getUrl());
+                totalImages++;
             }
 
             // 4. Populate usage for cost tracking

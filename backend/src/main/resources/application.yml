@@ -75,3 +75,7 @@ simplyviral:
     account-sid: ${TWILIO_ACCOUNT_SID:mock_sid}
     auth-token: ${TWILIO_AUTH_TOKEN:mock_token}
     from-number: ${TWILIO_FROM_NUMBER:+1234567890}
+
+  jwt:
+    secret: ${JWT_SECRET:defaultSecretKeyWithAtLeast32BytesLengthNeededForHmacSha256}
+    expirationMs: ${JWT_EXPIRATION_MS:86400000}

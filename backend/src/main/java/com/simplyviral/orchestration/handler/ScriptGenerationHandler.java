@@ -62,6 +62,11 @@ public class ScriptGenerationHandler implements StepHandler {
 
         // 5. Metered execution
         GptResponse response = executor.executeMetered(gptAdapter, request, stepRunContext);
+
+        if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
+            throw new RuntimeException("Empty response from GPT for SCRIPT_GENERATION");
+        }
+
         String rawScript = response.getChoices().get(0).getMessage().getContent();
 
         log.info("Script generated for Job {} ({} chars)", stepRunContext.getJob().getId(), rawScript.length());
