@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: simply-viral-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/simplyviral_db
+    username: postgres
+    password: 1234
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # Messaging & Auth Configs
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+            
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:mock-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:mock-google-client-secret}
+            scope: openid, profile, email, https://www.googleapis.com/auth/youtube.readonly
+
+simplyviral:
+  queue:
+    mode: DB
+    poll-interval-ms: 3000
+    worker-pool-size: 4
+  cache:
+    mode: NONE
+  lock:
+    mode: DB
+  storage:
+    mode: LOCAL
+    intermediate-images:
+      enabled: false
+      ttl-hours: 24
+  youtube:
+    sync:
+      enabled: false
+  topics:
+    source: classpath:topics/topics.json
+
+  provider:
+    openai:
+      api-key: ${OPENAI_API_KEY:mock_key}
+    falai:
+      api-key: ${FALAI_API_KEY:mock_key}
+    elevenlabs:
+      api-key: ${ELEVENLABS_API_KEY:mock_key}
+    creatomate:
+      api-key: ${CREATOMATE_API_KEY:mock_key}
+
+  twilio:
+    account-sid: ${TWILIO_ACCOUNT_SID:mock_sid}
+    auth-token: ${TWILIO_AUTH_TOKEN:mock_token}
+    from-number: ${TWILIO_FROM_NUMBER:+1234567890}

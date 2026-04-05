@@ -1,0 +1,12 @@
+[
+  {"id": 1, "title": "AI Replacing Developers in 2026", "category": "technology", "trending_score": 95},
+  {"id": 2, "title": "Mars Colony: First Humans Land", "category": "space", "trending_score": 92},
+  {"id": 3, "title": "The True Cost of Coding Agents", "category": "technology", "trending_score": 90},
+  {"id": 4, "title": "Quantum Computing Breaks RSA Encryption", "category": "technology", "trending_score": 88},
+  {"id": 5, "title": "Brain-Computer Interface Goes Mainstream", "category": "health", "trending_score": 87},
+  {"id": 6, "title": "Electric Flying Cars Now FAA Approved", "category": "transport", "trending_score": 85},
+  {"id": 7, "title": "Deepfake Detection Becomes Impossible", "category": "AI", "trending_score": 84},
+  {"id": 8, "title": "Universal Basic Income Trial Results", "category": "economics", "trending_score": 82},
+  {"id": 9, "title": "Ocean Cleanup Removes 90% of Pacific Garbage", "category": "environment", "trending_score": 80},
+  {"id": 10, "title": "Lab-Grown Meat Outsells Real Beef", "category": "food", "trending_score": 78}
+]

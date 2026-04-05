@@ -1,0 +1,13 @@
+package com.simplyviral.shared.constant;
+
+public enum StepKey {
+    TOPIC_FETCH,
+    TOPIC_SELECTION,
+    SCRIPT_GENERATION,
+    SCRIPT_BREAKDOWN,
+    IMAGE_PROMPT_GENERATION,
+    IMAGE_GENERATION,
+    AUDIO_GENERATION,
+    VIDEO_COMPOSITION,
+    FINAL_EDIT_RENDER
+}
